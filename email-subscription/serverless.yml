@@ -1,0 +1,72 @@
+service: serverless-ses-email-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  deploymentBucket:
+    name: email-subscription-7edge
+    serverSideEncryption: AES256
+    blockPublicAccess: true
+  environment:
+    SUBSCRIPTIONS_TABLE: ${self:service}-${sls:stage}-subscriptions
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ses:*
+            - dynamodb:*
+            - s3:*
+          Resource: '*'
+
+resources:
+  Resources:
+    SubscriptionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.SUBSCRIPTIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+
+functions:
+  subscribe:
+    handler: handlers/subscribe.handler
+    events:
+      - httpApi:
+          path: /subscribe
+          method: post
+  
+  unsubscribe:
+    handler: handlers/unsubscribe.handler
+    events:
+      - httpApi:
+          path: /unsubscribe
+          method: post
+
+  createTemplate:
+    handler: handlers/createTemplate.handler
+    events:
+      - httpApi:
+          path: /template
+          method: post
+  
+  sendEmail:
+    handler: handlers/sendEmail.handler
+    events:
+      - httpApi:
+          path: /send
+          method: post
+
+plugins:
+  - serverless-offline
+  
+custom:
+  stage: ${opt:stage, 'dev'}

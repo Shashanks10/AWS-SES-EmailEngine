@@ -1,0 +1,686 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "SubscribeLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/serverless-ses-email-service-dev-subscribe"
+      }
+    },
+    "UnsubscribeLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/serverless-ses-email-service-dev-unsubscribe"
+      }
+    },
+    "CreateTemplateLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/serverless-ses-email-service-dev-createTemplate"
+      }
+    },
+    "SendEmailLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/serverless-ses-email-service-dev-sendEmail"
+      }
+    },
+    "IamRoleLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "serverless-ses-email-service",
+                  "dev",
+                  "lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:CreateLogGroup",
+                    "logs:TagResource"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-ses-email-service-dev*:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-ses-email-service-dev*:*:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ses:*",
+                    "dynamodb:*",
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "serverless-ses-email-service",
+              "dev",
+              {
+                "Ref": "AWS::Region"
+              },
+              "lambdaRole"
+            ]
+          ]
+        }
+      }
+    },
+    "SubscribeLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "email-subscription-7edge",
+          "S3Key": "serverless/serverless-ses-email-service/dev/1735640257952-2024-12-31T10:17:37.952Z/serverless-ses-email-service.zip"
+        },
+        "Handler": "handlers/subscribe.handler",
+        "Runtime": "nodejs18.x",
+        "FunctionName": "serverless-ses-email-service-dev-subscribe",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "SUBSCRIPTIONS_TABLE": "serverless-ses-email-service-dev-subscriptions"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "SubscribeLogGroup"
+      ]
+    },
+    "UnsubscribeLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "email-subscription-7edge",
+          "S3Key": "serverless/serverless-ses-email-service/dev/1735640257952-2024-12-31T10:17:37.952Z/serverless-ses-email-service.zip"
+        },
+        "Handler": "handlers/unsubscribe.handler",
+        "Runtime": "nodejs18.x",
+        "FunctionName": "serverless-ses-email-service-dev-unsubscribe",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "SUBSCRIPTIONS_TABLE": "serverless-ses-email-service-dev-subscriptions"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "UnsubscribeLogGroup"
+      ]
+    },
+    "CreateTemplateLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "email-subscription-7edge",
+          "S3Key": "serverless/serverless-ses-email-service/dev/1735640257952-2024-12-31T10:17:37.952Z/serverless-ses-email-service.zip"
+        },
+        "Handler": "handlers/createTemplate.handler",
+        "Runtime": "nodejs18.x",
+        "FunctionName": "serverless-ses-email-service-dev-createTemplate",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "SUBSCRIPTIONS_TABLE": "serverless-ses-email-service-dev-subscriptions"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "CreateTemplateLogGroup"
+      ]
+    },
+    "SendEmailLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "email-subscription-7edge",
+          "S3Key": "serverless/serverless-ses-email-service/dev/1735640257952-2024-12-31T10:17:37.952Z/serverless-ses-email-service.zip"
+        },
+        "Handler": "handlers/sendEmail.handler",
+        "Runtime": "nodejs18.x",
+        "FunctionName": "serverless-ses-email-service-dev-sendEmail",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "SUBSCRIPTIONS_TABLE": "serverless-ses-email-service-dev-subscriptions"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "SendEmailLogGroup"
+      ]
+    },
+    "SubscribeLambdaVersionP8SONHeBGaZaygik3TUK36RJcixN0fdB0RZQ7Dg": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "SubscribeLambdaFunction"
+        },
+        "CodeSha256": "fncorINl5YKqOGAli/q5hoqDn4NFvd7LB72fVYc9Gzk="
+      }
+    },
+    "UnsubscribeLambdaVersionS0uEZVm4n68hUPZ4WMU8N3rMM8Xl4B4LiRn3PWIc8": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "UnsubscribeLambdaFunction"
+        },
+        "CodeSha256": "fncorINl5YKqOGAli/q5hoqDn4NFvd7LB72fVYc9Gzk="
+      }
+    },
+    "CreateTemplateLambdaVersion17GL3tmHEAfuHA6gJCK7SwLPVmRtQF9CiNjx8bYLQ": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "CreateTemplateLambdaFunction"
+        },
+        "CodeSha256": "fncorINl5YKqOGAli/q5hoqDn4NFvd7LB72fVYc9Gzk="
+      }
+    },
+    "SendEmailLambdaVersionAYxSh3abEaKQ6lPNf4vTgV1YiRer1TuF2lYR4hFtw8g": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "SendEmailLambdaFunction"
+        },
+        "CodeSha256": "fncorINl5YKqOGAli/q5hoqDn4NFvd7LB72fVYc9Gzk="
+      }
+    },
+    "HttpApi": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "dev-serverless-ses-email-service",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "HttpApiStage": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "StageName": "$default",
+        "AutoDeploy": true,
+        "DefaultRouteSettings": {
+          "DetailedMetricsEnabled": false
+        }
+      }
+    },
+    "SubscribeLambdaPermissionHttpApi": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "SubscribeLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "HttpApi"
+              },
+              "/*"
+            ]
+          ]
+        }
+      }
+    },
+    "HttpApiIntegrationSubscribe": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "SubscribeLambdaFunction",
+            "Arn"
+          ]
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 30000
+      }
+    },
+    "HttpApiRoutePostSubscribe": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "RouteKey": "POST /subscribe",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "HttpApiIntegrationSubscribe"
+              }
+            ]
+          ]
+        }
+      },
+      "DependsOn": "HttpApiIntegrationSubscribe"
+    },
+    "UnsubscribeLambdaPermissionHttpApi": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "UnsubscribeLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "HttpApi"
+              },
+              "/*"
+            ]
+          ]
+        }
+      }
+    },
+    "HttpApiIntegrationUnsubscribe": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "UnsubscribeLambdaFunction",
+            "Arn"
+          ]
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 30000
+      }
+    },
+    "HttpApiRoutePostUnsubscribe": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "RouteKey": "POST /unsubscribe",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "HttpApiIntegrationUnsubscribe"
+              }
+            ]
+          ]
+        }
+      },
+      "DependsOn": "HttpApiIntegrationUnsubscribe"
+    },
+    "CreateTemplateLambdaPermissionHttpApi": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "CreateTemplateLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "HttpApi"
+              },
+              "/*"
+            ]
+          ]
+        }
+      }
+    },
+    "HttpApiIntegrationCreateTemplate": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "CreateTemplateLambdaFunction",
+            "Arn"
+          ]
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 30000
+      }
+    },
+    "HttpApiRoutePostTemplate": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "RouteKey": "POST /template",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "HttpApiIntegrationCreateTemplate"
+              }
+            ]
+          ]
+        }
+      },
+      "DependsOn": "HttpApiIntegrationCreateTemplate"
+    },
+    "SendEmailLambdaPermissionHttpApi": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "SendEmailLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "HttpApi"
+              },
+              "/*"
+            ]
+          ]
+        }
+      }
+    },
+    "HttpApiIntegrationSendEmail": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {
+          "Fn::GetAtt": [
+            "SendEmailLambdaFunction",
+            "Arn"
+          ]
+        },
+        "PayloadFormatVersion": "2.0",
+        "TimeoutInMillis": 30000
+      }
+    },
+    "HttpApiRoutePostSend": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "HttpApi"
+        },
+        "RouteKey": "POST /send",
+        "Target": {
+          "Fn::Join": [
+            "/",
+            [
+              "integrations",
+              {
+                "Ref": "HttpApiIntegrationSendEmail"
+              }
+            ]
+          ]
+        }
+      },
+      "DependsOn": "HttpApiIntegrationSendEmail"
+    },
+    "SubscriptionsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "serverless-ses-email-service-dev-subscriptions",
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "email",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "email",
+            "KeyType": "HASH"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": "email-subscription-7edge",
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-ServerlessDeploymentBucketName"
+      }
+    },
+    "SubscribeLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "SubscribeLambdaVersionP8SONHeBGaZaygik3TUK36RJcixN0fdB0RZQ7Dg"
+      },
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-SubscribeLambdaFunctionQualifiedArn"
+      }
+    },
+    "UnsubscribeLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "UnsubscribeLambdaVersionS0uEZVm4n68hUPZ4WMU8N3rMM8Xl4B4LiRn3PWIc8"
+      },
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-UnsubscribeLambdaFunctionQualifiedArn"
+      }
+    },
+    "CreateTemplateLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "CreateTemplateLambdaVersion17GL3tmHEAfuHA6gJCK7SwLPVmRtQF9CiNjx8bYLQ"
+      },
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-CreateTemplateLambdaFunctionQualifiedArn"
+      }
+    },
+    "SendEmailLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "SendEmailLambdaVersionAYxSh3abEaKQ6lPNf4vTgV1YiRer1TuF2lYR4hFtw8g"
+      },
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-SendEmailLambdaFunctionQualifiedArn"
+      }
+    },
+    "HttpApiId": {
+      "Description": "Id of the HTTP API",
+      "Value": {
+        "Ref": "HttpApi"
+      },
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-HttpApiId"
+      }
+    },
+    "HttpApiUrl": {
+      "Description": "URL of the HTTP API",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "HttpApi"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            }
+          ]
+        ]
+      },
+      "Export": {
+        "Name": "sls-serverless-ses-email-service-dev-HttpApiUrl"
+      }
+    }
+  }
+}
